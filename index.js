@@ -1,22 +1,26 @@
-const Joi = require('joi');
 //capital becuase it is a class
 const express = require('express');
+const Joi = require('joi');
 var bodyParser = require("body-parser");
 const { valid, date } = require('joi');
 const app = express();
+
 
 app.use(express.json());
 //^added piece of middleware
 //when we call this method, it return middleware, then app.use uses that middleware
 //Here we are configuring express to use body-parser as middle-ware.
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 
+
+//books array for REST API
 const books = [
-    {id: 1, name: 'Count of Monte Cristo', author: "John S.", checkedout: false, borrower: "None", checkout_date: "", due_date: ""},
-    {id: 2, name: 'Time Machine', author: "James T.", checkedout: false, borrower: "None",checkout_date: "", due_date: ""},
-    {id: 3, name: 'Moby Dick', author: "Jane S.", checkedout: false, borrower: "None", checkout_date: "", due_date: ""},
+    {id: 1, name: 'The Count of Monte Cristo', author: "Alexander D.", checkedout: false, borrower: "None", checkout_date: "", due_date: ""},
+    {id: 2, name: 'The Time Machine', author: "H.G. Wells", checkedout: false, borrower: "None",checkout_date: "", due_date: ""},
+    {id: 3, name: 'Moby Dick', author: "Herman M.", checkedout: false, borrower: "None", checkout_date: "", due_date: ""},
 ]
 
+//users array for REST API
 const users = [
 
 ]
@@ -46,17 +50,26 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
+//sends back all books in the 'books' array
 app.get('/api/books', (req, res) => {
     res.send(books);
 });
 
+//sends back all users in the 'users' array
 app.get('/api/users', (req, res) => {
     res.send(users)
-})
+});
  
+//sends back all books that are checkedout by a given user
 app.get('/api/checkedout_books/:id', (req, res) => {
     const user = users.find(user => user.id === parseInt(req.params.id))
 
+    if(!user){
+        return res.status(400).send('User not found')
+    }
+
+    //compares the borrower of each book to the user.username
+    //adds the book checkedout_books_arr if the iteration finds one
     var checkedout_books_arr = []
     for(var i = 0; i < books.length; i++){
         if(books[i].borrower === user.username){
@@ -97,6 +110,7 @@ app.post('/api/add_book', (req, res) => {
     res.status(200).send('This book was added succesfully')
 })
 
+//adds a user to the user array
 app.post('/api/add_user', (req, res) => {
     console.log(req.body.username)
     for(var i = 0; i < users.length; i++){
@@ -128,6 +142,7 @@ app.post('/api/add_user', (req, res) => {
     res.status(200).send('This user was added succesfully')
 })
 
+//'checks out' a book, editing the book in the books array
 app.put('/api/checkout_book/:id', (req, res) => {
     console.log("Borrower: " + req.body.borrower)
     var count = 0;
@@ -156,6 +171,7 @@ app.put('/api/checkout_book/:id', (req, res) => {
 
 })
 
+//'turns in' a book, editing the checkedout bool in the books array
 app.put('/api/turn_in_book/:id', (req, res) => {
 
     const book = books.find(book => book.id === parseInt(req.params.id))
@@ -182,6 +198,7 @@ app.put('/api/turn_in_book/:id', (req, res) => {
     res.status(200).send("This book is no longer checked out")
 })
 
+//deletes the book with the given id
 app.delete('/api/delete_book/:id', (req, res) => {
     const book = books.find(book => book.id === parseInt(req.params.id))
     if(!book){
@@ -195,6 +212,7 @@ app.delete('/api/delete_book/:id', (req, res) => {
     res.status(200).send('The book was deleted')
 });
 
+//deletes the user with the given id
 app.delete('/api/delete_user/:id', (req, res) => {
     const user = users.find(user => user.id === parseInt(req.params.id))
     console.log(user.id)
@@ -212,6 +230,7 @@ app.delete('/api/delete_user/:id', (req, res) => {
 
 //we added parameter 'id' 
 //res.send() sends to the client
+//retrieves a single book with a requested id
 app.get('/api/books/:id', (req, res) => {
     const book = books.find(book => book.id === parseInt(req.params.id))
     if(!book){
@@ -222,6 +241,7 @@ app.get('/api/books/:id', (req, res) => {
     }
 });
 
+//edits the data of a book to res.body.data
 app.put('/api/edit_book/:id', (req, res) => {
     //look up book
     //if not existing, return 404
@@ -229,6 +249,7 @@ app.put('/api/edit_book/:id', (req, res) => {
     const book = books.find(book => book.id === parseInt(req.params.id))
     if(!book){
         console.log("Not found")
+        return res.status(404).send('The book with the given id was not found')
     }
 
     book.name = req.body.title
@@ -259,4 +280,5 @@ app.listen(port, () => console.log(`Listening on port ${port}...`))
 
 //I can use nodemon index.js in the terminal so that I dont
 //have to constantly refresh the terminal
+
 
